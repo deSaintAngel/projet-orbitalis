@@ -164,6 +164,12 @@
     <button id="camera-btn" class="btn btn-secondary">📷 Caméra</button>
     <button id="reset-chat-btn" class="btn btn-secondary">🧹 Nettoyage du forum</button>
   </div>
+  <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+    <label for="broadcaster-key-input" style="color:#88a; font-size:0.9rem;">Clé broadcaster :</label>
+    <input id="broadcaster-key-input" type="text" placeholder="Saisir la clé" style="padding:6px 10px; border-radius:6px; border:1px solid #2a2a5e; background:#0e1024; color:#cfe;" />
+    <button id="broadcaster-key-test" class="btn btn-secondary" style="padding:8px 14px; font-size:0.9rem;">Tester</button>
+    <button id="broadcaster-key-save" class="btn" style="padding:8px 14px; font-size:0.9rem; display:none;">Enregistrer</button>
+  </div>
   <div id="seestar-upload" style="display:none; flex-direction:column; align-items:center; gap:12px; margin-top:18px;">
     <div style="font-size:1.05rem; color:#88e;">Envoyez ici les captures Seestar</div>
     <input type="file" id="seestar-file" accept="image/*" style="display:block;" />
@@ -213,11 +219,9 @@
     }
 
     async function ensureKeyAndAuth() {
-      let key = localStorage.getItem('BROADCASTER_KEY');
-      if (!key) {
-        key = prompt('Clé broadcaster (BROADCASTER_KEY) :');
-        if (key) localStorage.setItem('BROADCASTER_KEY', key);
-      }
+      // Prefer input value, fallback to localStorage
+      let inputEl = document.getElementById('broadcaster-key-input');
+      let key = (inputEl && inputEl.value) ? inputEl.value.trim() : localStorage.getItem('BROADCASTER_KEY');
       if (!key) {
         setStatus('Clé broadcaster manquante', 'error');
         return null;
@@ -248,6 +252,41 @@
       stopBtn.style.display = 'inline-block';
     });
 
+    // Key input controls
+    const keyInput = document.getElementById('broadcaster-key-input');
+    const keyTestBtn = document.getElementById('broadcaster-key-test');
+    const keySaveBtn = document.getElementById('broadcaster-key-save');
+
+    async function testAndShow(key) {
+      setStatus('Vérification de la clé…');
+      const ok = await verifyKey(key);
+      if (ok) {
+        setStatus('Clé valide', 'ok');
+        keySaveBtn.style.display = 'inline-block';
+      } else {
+        setStatus('Clé invalide', 'error');
+        keySaveBtn.style.display = 'none';
+      }
+      return ok;
+    }
+
+    keyTestBtn.addEventListener('click', async () => {
+      const k = keyInput.value.trim();
+      if (!k) {
+        setStatus('Aucune clé saisie', 'error');
+        return;
+      }
+      await testAndShow(k);
+    });
+
+    keySaveBtn.addEventListener('click', () => {
+      const k = keyInput.value.trim();
+      if (!k) return;
+      localStorage.setItem('BROADCASTER_KEY', k);
+      setStatus('Clé enregistrée localement', 'ok');
+      keySaveBtn.style.display = 'none';
+    });
+
     stopBtn.addEventListener('click', () => {
       setStatus('Diffusion arrêtée');
       controls.style.display = 'none';
@@ -258,14 +297,17 @@
 
     // On load, try to check key silently
     (async () => {
-      const key = localStorage.getItem('BROADCASTER_KEY');
-      if (key) {
+      const stored = localStorage.getItem('BROADCASTER_KEY');
+      if (stored) {
+        // prefill input
+        const inputEl = document.getElementById('broadcaster-key-input');
+        if (inputEl) inputEl.value = stored;
         setStatus('Vérification de la clé…');
-        const ok = await verifyKey(key);
+        const ok = await verifyKey(stored);
         if (ok) setStatus('Clé broadcaster valide', 'ok');
-        else setStatus('Clé broadcaster invalide — clique pour renseigner', 'error');
+        else setStatus('Clé broadcaster invalide — teste une autre clé', 'error');
       } else {
-        setStatus('Aucune clé trouvée — clique pour renseigner', 'error');
+        setStatus('Aucune clé trouvée — saisis la clé ci-dessous', 'error');
       }
       // Reveal UI controls once basic check is done
       document.getElementById('controls').style.display = 'flex';
