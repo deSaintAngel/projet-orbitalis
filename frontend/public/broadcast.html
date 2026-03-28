@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbitalis Stream – Diffuser</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#07071a">
+  <link rel="icon" href="/icon-192.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #07071a;
+      color: #c8d8ff;
+      font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 24px;
+    }
+    h1 {
+      font-size: 1.3rem;
+      font-weight: 300;
+      letter-spacing: 0.14em;
+      color: #6677ee;
+    }
+    #preview {
+      width: 100%;
+      max-width: 560px;
+      aspect-ratio: 16 / 9;
+      background: #0e0e28;
+      border-radius: 12px;
+      border: 1px solid #1c1c5a;
+      object-fit: contain;
+    }
+    canvas { display: none; }
+    #status {
+      font-size: 0.88rem;
+      color: #445566;
+      min-height: 1.2em;
+      text-align: center;
+    }
+    #status.ok    { color: #44ee88; }
+    #status.error { color: #ff4455; }
+    .btn {
+      padding: 13px 38px;
+      border-radius: 50px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    #start-btn {
+      background: linear-gradient(135deg, #2233ff, #5544ff);
+      color: #fff;
+      box-shadow: 0 0 28px #2233ff44;
+    }
+    #start-btn:hover { transform: scale(1.04); box-shadow: 0 0 40px #4455ff88; }
+    #stop-btn {
+      background: linear-gradient(135deg, #cc2233, #ff3344);
+      color: #fff;
+      display: none;
+      box-shadow: 0 0 28px #ff223344;
+    }
+    #stop-btn:hover { transform: scale(1.04); }
+    #live-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #ff4444;
+    }
+    #live-dot {
+      width: 9px;
+      height: 9px;
+      background: #ff3333;
+      border-radius: 50%;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    label { font-size: 0.85rem; color: #6677aa; }
+    select, input[type=range] {
+      background: #12122e;
+      color: #aabbdd;
+      border: 1px solid #2a2a5e;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 0.85rem;
+    }
+    #interval-val { color: #44ee88; font-weight: 600; min-width: 30px; display: inline-block; }
+    .hint {
+      font-size: 0.76rem;
+      color: #2a2a50;
+      text-align: center;
+      max-width: 360px;
+      line-height: 1.6;
+    }
+    #start-buttons {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn-secondary {
+      background: linear-gradient(135deg, #1a3366, #2a4488) !important;
+      box-shadow: 0 0 20px #22448844 !important;
+    }
+    .hint strong { color: #4455aa; }
+  </style>
+</head>
+<body>
+  <div id="inapp-warning" style="display:none; background:#3a0a0a; border:1px solid #cc2233; border-radius:12px; padding:18px 20px; max-width:480px; width:100%; text-align:center; line-height:1.7">
+    <div style="font-size:1.1rem; font-weight:700; color:#ff4455; margin-bottom:8px">⚠ Navigateur intégré détecté</div>
+    <div style="font-size:0.88rem; color:#cc9999; margin-bottom:16px">
+      Le partage d'écran ne fonctionne pas dans les navigateurs intégrés (Facebook, Instagram…).<br>
+      Ouvre cette page dans <strong style="color:#fff">Chrome</strong>.
+    </div>
+    <button onclick="openInChrome()" style="background:#1a73e8; color:#fff; border:none; border-radius:50px; padding:11px 28px; font-size:0.95rem; font-weight:700; cursor:pointer">Ouvrir dans Chrome</button>
+  </div>
+  <h1>⟡ ORBITALIS STREAM</h1>
+  <button id="install-pwa-btn" class="btn" style="margin-bottom:12px; display:none;">Installer l'application</button>
+  <div style="position:relative; width:100%; max-width:560px; aspect-ratio:16/9;">
+    <video id="preview" autoplay muted playsinline style="width:100%; display:block;"></video>
+    <div id="crop-rect" style="position:absolute; border:2px dashed #44ee88; border-radius:8px; pointer-events:auto; display:none;"></div>
+  </div>
+  <div style="display:flex; align-items:center; gap:18px; margin-bottom:8px;">
+    <button id="toggle-crop-btn" class="btn btn-secondary" style="padding:6px 18px; font-size:0.95rem;">Recadrer</button>
+    <span id="crop-ratio-label" style="color:#88e; font-size:0.98rem;">16:9</span>
+  </div>
+  <canvas id="canvas"></canvas>
+  <div id="live-indicator">
+    <div id="live-dot"></div> EN DIRECT
+  </div>
+  <div id="status">Connexion au serveur...</div>
+  <div class="controls" id="controls" style="display:none">
+    <label>Intervalle :
+      <input type="range" id="interval" min="0.1" max="1" value="0.5" step="0.1">
+      <span id="interval-val">0.5</span>s
+    </label>
+    <label>Qualité :
+      <select id="quality">
+        <option value="0.5">Basse (~30 Ko)</option>
+        <option value="0.7">Moyenne (~60 Ko)</option>
+        <option value="0.85">Haute (~120 Ko)</option>
+        <option value="0.98">Très haute (~200 Ko)</option>
+        <option value="1">Super haute (~200 Ko+)</option>
+      </select>
+    </label>
+  </div>
+  <div id="start-buttons">
+    <button id="screen-btn" class="btn">🖥 Partager l'écran</button>
+    <button id="camera-btn" class="btn btn-secondary">📷 Caméra</button>
+    <button id="reset-chat-btn" class="btn btn-secondary">🧹 Nettoyage du forum</button>
+  </div>
+  <div id="seestar-upload" style="display:none; flex-direction:column; align-items:center; gap:12px; margin-top:18px;">
+    <div style="font-size:1.05rem; color:#88e;">Envoyez ici les captures Seestar</div>
+    <input type="file" id="seestar-file" accept="image/*" style="display:block;" />
+    <img id="seestar-preview" style="max-width:320px; max-height:180px; display:none; border-radius:8px; border:1px solid #223; margin-top:8px;" />
+    <div id="seestar-upload-status" style="font-size:0.9rem; color:#44ee88;"></div>
+    <button id="seestar-pwa-capture-btn" class="btn" style="margin-top:10px; display:none;">📺 Capture auto (PC uniquement)</button>
+    <div id="seestar-pwa-status" style="font-size:0.9rem; color:#44ee88; margin-top:6px;"></div>
+    <div id="termux-info" style="display:none; margin-top:12px; padding:14px; background:#1a2a1a; border:1px solid #2a4a2a; border-radius:8px; font-size:0.85rem; color:#88cc88; max-width:420px; text-align:left;">
+      📱 <strong style="color:#fff;">Sur mobile Android – Termux :</strong><br><br>
+      <strong style="color:#ccc;">① Installe Termux</strong> (depuis <a href="https://f-droid.org/packages/com.termux/" style="color:#7af;" target="_blank">F-Droid</a>)<br><br>
+      <strong style="color:#ccc;">② Colle cette commande dans Termux :</strong><br>
+      <div style="position:relative; margin-top:6px;">
+        <code id="termux-cmd" style="display:block; background:#111; padding:10px 40px 10px 10px; border-radius:4px; color:#44ee88; font-size:0.82rem; word-break:break-all; line-height:1.5;">curl -sO https://stream.orbitalis.fr/seestar-stream.sh &amp;&amp; bash seestar-stream.sh</code>
+        <button onclick="copyTermuxCmd()" style="position:absolute; top:6px; right:6px; background:#2a4a2a; border:1px solid #44ee88; color:#44ee88; border-radius:4px; padding:2px 8px; font-size:0.75rem; cursor:pointer;">📋 Copier</button>
+      </div>
+      <span id="termux-copy-ok" style="display:none; color:#44ee88; font-size:0.75rem; margin-top:4px; display:block;">✅ Copié !</span><br>
+      <strong style="color:#ccc;">③</strong> Le script tourne en boucle (<strong style="color:#fff;">Ctrl+C</strong> pour arrêter).
+    </div>
+  </div>
+  <button id="stop-btn"  class="btn">■ Arrêter la diffusion</button>
+  <p class="hint">
+    🔒 Page réservée à l'émetteur.<br>
+    Les spectateurs accèdent via <strong>stream.orbitalis.fr</strong>
+  </p>
+  <script>
+    // Broadcaster key management and simple auth check
+    const API_BASE = window.location.origin.replace(/:\/\/[^/]+/, 'http://127.0.0.1:8000');
+    const statusEl = document.getElementById('status');
+    const startBtn = document.getElementById('screen-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const controls = document.getElementById('controls');
+
+    function setStatus(text, cls) {
+      statusEl.textContent = text;
+      statusEl.className = cls || '';
+    }
+
+    async function verifyKey(key) {
+      try {
+        const res = await fetch(`${API_BASE}/api/broadcast/auth?key=${encodeURIComponent(key)}`);
+        if (!res.ok) return false;
+        const data = await res.json();
+        return data && data.status === 'ok';
+      } catch (e) {
+        return false;
+      }
+    }
+
+    async function ensureKeyAndAuth() {
+      let key = localStorage.getItem('BROADCASTER_KEY');
+      if (!key) {
+        key = prompt('Clé broadcaster (BROADCASTER_KEY) :');
+        if (key) localStorage.setItem('BROADCASTER_KEY', key);
+      }
+      if (!key) {
+        setStatus('Clé broadcaster manquante', 'error');
+        return null;
+      }
+
+      setStatus('Vérification de la clé…');
+      const ok = await verifyKey(key);
+      if (!ok) {
+        setStatus('Clé broadcaster invalide', 'error');
+        return null;
+      }
+      setStatus('Clé validée', 'ok');
+      return key;
+    }
+
+    // Example: before starting the stream, verify key
+    startBtn.addEventListener('click', async () => {
+      const key = await ensureKeyAndAuth();
+      if (!key) return;
+
+      // Proceed to start screen share / stream capture
+      // For brevity we only show UI changes here; integration with the existing
+      // streaming backend should include the header: Authorization: Broadcaster <key>
+      setStatus('Démarrage de la capture…', 'ok');
+      controls.style.display = 'flex';
+      document.getElementById('live-indicator').style.display = 'flex';
+      startBtn.style.display = 'none';
+      stopBtn.style.display = 'inline-block';
+    });
+
+    stopBtn.addEventListener('click', () => {
+      setStatus('Diffusion arrêtée');
+      controls.style.display = 'none';
+      document.getElementById('live-indicator').style.display = 'none';
+      startBtn.style.display = 'inline-block';
+      stopBtn.style.display = 'none';
+    });
+
+    // On load, try to check key silently
+    (async () => {
+      const key = localStorage.getItem('BROADCASTER_KEY');
+      if (key) {
+        setStatus('Vérification de la clé…');
+        const ok = await verifyKey(key);
+        if (ok) setStatus('Clé broadcaster valide', 'ok');
+        else setStatus('Clé broadcaster invalide — clique pour renseigner', 'error');
+      } else {
+        setStatus('Aucune clé trouvée — clique pour renseigner', 'error');
+      }
+      // Reveal UI controls once basic check is done
+      document.getElementById('controls').style.display = 'flex';
+    })();
+  </script>
+</body>
+</html>
