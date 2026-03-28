@@ -19,12 +19,22 @@ $Domain = "orbitalis.fr"
 $ItemsToDeploy = @(
     "backend",
     "frontend",
-    ".env.production",
+    # .env.production is sensitive and not deployed by default to avoid leaking secrets.
+    # To force-copy it, set the environment variable FORCE_COPY_ENV=1 before running this script.
+    # Example (PowerShell): $env:FORCE_COPY_ENV = "1"; .\deploy_orbitalis.ps1
     "README.md",
     "constellation_lines.json",
     "constellation_hips.json",
     "filtered_stars.json"
 )
+
+# Remove .env.production from the list unless explicitly forced via env var
+if ($env:FORCE_COPY_ENV -ne "1") {
+    $ItemsToDeploy = $ItemsToDeploy | Where-Object { $_ -ne ".env.production" }
+    Write-Status "Note: .env.production will NOT be uploaded (FORCE_COPY_ENV not set)" "WARNING"
+} else {
+    Write-Status "FORCE_COPY_ENV=1 detected: .env.production will be uploaded" "INFO"
+}
 
 $ColorSuccess = "Green"
 $ColorError = "Red"
