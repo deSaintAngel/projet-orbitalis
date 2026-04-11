@@ -53,7 +53,15 @@ class ScreenCaptureService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Stop action from notification button
         if (intent?.action == "STOP") {
-            stopSelf()
+            val t = token; val u = stopUrl
+            if (t.isNotEmpty() && u.isNotEmpty()) {
+                Thread {
+                    try { postStop(u, t) } catch (_: Exception) {}
+                    Handler(Looper.getMainLooper()).post { stopSelf() }
+                }.start()
+            } else {
+                stopSelf()
+            }
             return START_NOT_STICKY
         }
 
@@ -121,11 +129,6 @@ class ScreenCaptureService : Service() {
         virtualDisplay?.release()
         mediaProjection?.stop()
         imageReader?.close()
-        // Signal au serveur que la diffusion est terminée
-        if (token.isNotEmpty() && stopUrl.isNotEmpty()) {
-            val t = token; val u = stopUrl
-            Thread { try { postStop(u, t) } catch (_: Exception) {} }.start()
-        }
         super.onDestroy()
     }
 

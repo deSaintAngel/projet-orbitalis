@@ -9,6 +9,9 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
 
 class MainActivity : AppCompatActivity() {
 
@@ -64,6 +67,23 @@ class MainActivity : AppCompatActivity() {
         }
 
         stopBtn.setOnClickListener {
+            // Envoyer le signal d'arrêt AVANT de tuer le service
+            val url = urlField.text.toString().trim()
+            val tok = tokenField.text.toString().trim()
+            if (url.isNotEmpty() && tok.isNotEmpty()) {
+                val sUrl = url.replace(Regex("/seestar-upload$"), "/seestar-stop")
+                Thread {
+                    try {
+                        val conn = URL("$sUrl?token=${URLEncoder.encode(tok, "UTF-8")}").openConnection() as HttpURLConnection
+                        conn.requestMethod  = "POST"
+                        conn.connectTimeout = 4_000
+                        conn.readTimeout    = 4_000
+                        conn.setFixedLengthStreamingMode(0)
+                        conn.responseCode
+                        conn.disconnect()
+                    } catch (_: Exception) {}
+                }.start()
+            }
             stopService(Intent(this, ScreenCaptureService::class.java))
             setStatus("Arrêté", false)
             startBtn.isEnabled = true

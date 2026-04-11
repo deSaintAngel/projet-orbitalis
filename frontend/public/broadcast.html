@@ -122,12 +122,23 @@
 </head>
 <body>
   <div id="inapp-warning" style="display:none; background:#3a0a0a; border:1px solid #cc2233; border-radius:12px; padding:18px 20px; max-width:480px; width:100%; text-align:center; line-height:1.7">
-    <div style="font-size:1.1rem; font-weight:700; color:#ff4455; margin-bottom:8px">⚠ Navigateur intégré détecté</div>
-    <div style="font-size:0.88rem; color:#cc9999; margin-bottom:16px">
-      Le partage d'écran ne fonctionne pas dans les navigateurs intégrés (Facebook, Instagram…).<br>
-      Ouvre cette page dans <strong style="color:#fff">Chrome</strong>.
+    <div style="font-size:1.1rem; font-weight:700; color:#ff4455; margin-bottom:8px">⚠ Ouvrir dans Chrome</div>
+    <div style="font-size:0.88rem; color:#cc9999; margin-bottom:10px">
+      Le partage d'écran ne fonctionne qu'dans <strong style="color:#fff">Chrome</strong>.<br>
+      Copie ce lien et colle-le dans Chrome :
     </div>
-    <button onclick="openInChrome()" style="background:#1a73e8; color:#fff; border:none; border-radius:50px; padding:11px 28px; font-size:0.95rem; font-weight:700; cursor:pointer">Ouvrir dans Chrome</button>
+    <div id="inapp-url" style="background:#1a0000; border:1px solid #553333; border-radius:8px; padding:8px 12px; font-size:0.8rem; color:#ffaaaa; word-break:break-all; margin-bottom:12px; text-align:left;"></div>
+    <button onclick="copyPageUrl()" id="copy-url-btn" style="background:#1a73e8; color:#fff; border:none; border-radius:50px; padding:11px 28px; font-size:0.95rem; font-weight:700; cursor:pointer">📋 Copier le lien</button>
+    <div id="copy-ok" style="display:none; color:#44ee88; font-size:0.85rem; margin-top:8px;">✅ Lien copié ! Ouvre Chrome et colle-le dans la barre d'adresse.</div>
+  </div>
+  <div id="no-screenshare-warning" style="display:none; background:#1a1a0a; border:1px solid #aa8800; border-radius:12px; padding:16px 20px; max-width:480px; width:100%; text-align:center; line-height:1.7">
+    <div style="font-size:1.05rem; font-weight:700; color:#ffcc44; margin-bottom:8px">📱 Partage d'écran non disponible sur ce téléphone</div>
+    <div style="font-size:0.85rem; color:#ccaa66; margin-bottom:4px">
+      iOS (iPhone / iPad) et certains navigateurs mobiles ne permettent pas le partage d'écran via le navigateur.
+    </div>
+    <div style="font-size:0.85rem; color:#ccaa66;">
+      👉 Utilisez le bouton <strong style="color:#fff">📷 Caméra</strong> pour diffuser la caméra,<br>ou passez sur un <strong style="color:#fff">ordinateur</strong> pour partager votre écran.
+    </div>
   </div>
   <h1>⟡ ORBITALIS STREAM</h1>
   <button id="install-pwa-btn" class="btn" style="margin-bottom:12px; display:none;">Installer l'application</button>
@@ -294,6 +305,55 @@
       startBtn.style.display = 'inline-block';
       stopBtn.style.display = 'none';
     });
+
+    // ── Détection navigateur intégré ──────────────────────────────────────
+    const ua = navigator.userAgent;
+    const isInAppBrowser = /FBAN|FBAV|Instagram|Line|MicroMessenger|Twitter|Snapchat|TikTok/.test(ua)
+      || (ua.includes('Android') && ua.includes('wv'));
+    if (isInAppBrowser) {
+      document.getElementById('inapp-warning').style.display = 'block';
+      const urlEl = document.getElementById('inapp-url');
+      if (urlEl) urlEl.textContent = location.href;
+    }
+    function copyPageUrl() {
+      const url = location.href;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          document.getElementById('copy-ok').style.display = 'block';
+          const btn = document.getElementById('copy-url-btn');
+          if (btn) { btn.textContent = '✅ Copié !'; btn.style.background = '#1a7a3a'; }
+        }).catch(() => fallbackCopy(url));
+      } else {
+        fallbackCopy(url);
+      }
+    }
+    function fallbackCopy(url) {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try {
+        document.execCommand('copy');
+        document.getElementById('copy-ok').style.display = 'block';
+        const btn = document.getElementById('copy-url-btn');
+        if (btn) { btn.textContent = '✅ Copié !'; btn.style.background = '#1a7a3a'; }
+      } catch(e) {}
+      document.body.removeChild(ta);
+    }
+
+    // ── Détection support partage d'écran ─────────────────────────────────
+    const supportsDisplayMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+    if (!supportsDisplayMedia) {
+      document.getElementById('no-screenshare-warning').style.display = 'block';
+      const sb = document.getElementById('screen-btn');
+      if (sb) {
+        sb.disabled = true;
+        sb.style.opacity = '0.35';
+        sb.style.cursor = 'not-allowed';
+        sb.title = 'Partage d\'écran non supporté sur cet appareil';
+      }
+    }
 
     // On load, try to check key silently
     (async () => {
