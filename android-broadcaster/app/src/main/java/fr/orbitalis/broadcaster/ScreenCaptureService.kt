@@ -12,6 +12,7 @@ import android.media.projection.MediaProjectionManager
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
+import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
@@ -68,6 +69,11 @@ class ScreenCaptureService : Service() {
 
         val mpManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = mpManager.getMediaProjection(resultCode, projData)
+
+        // Android 14+ : enregistrer le callback AVANT createVirtualDisplay
+        mediaProjection!!.registerCallback(object : MediaProjection.Callback() {
+            override fun onStop() { stopSelf() }
+        }, Handler(Looper.getMainLooper()))
 
         @Suppress("DEPRECATION")
         val metrics = DisplayMetrics()
