@@ -13,7 +13,7 @@ $Server = "***.**.**.***"
 $User = "root"
 $LocalProjectPath = "c:\Users\julien_orbitalis\Documents\projet_orbitalis"
 $RemoteBackendPath = "/var/www/orbitalis"
-$SSHKeyPath = "$env:USERPROFILE\.ssh\id_ed25519_deploy"
+$SSHKeyPath = "$env:USERPROFILE\.ssh\*******************"
 $Domain = "orbitalis.fr"
 
 $ItemsToDeploy = @(
