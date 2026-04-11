@@ -73,6 +73,28 @@
             android:padding="14dp"
             android:inputType="textPassword"
             android:textSize="13sp"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- Intervalle -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Intervalle (ms) — 100 = 10fps  |  200 = 5fps  |  1000 = 1fps"
+            android:textColor="#99aabb"
+            android:textSize="12sp"
+            android:layout_marginBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/interval_field"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#12122a"
+            android:textColor="#eeeeff"
+            android:textColorHint="#445566"
+            android:hint="100"
+            android:padding="14dp"
+            android:inputType="number"
+            android:textSize="13sp"
             android:layout_marginBottom="36dp"/>
 
         <!-- Bouton Démarrer -->
@@ -115,7 +137,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="L'application capture l'écran et l'envoie en continu au serveur (1 image/seconde). Laissez-la ouverte ou en arrière-plan. Les spectateurs voient la diffusion sur stream.orbitalis.fr."
+            android:text="L'application capture l'écran et l'envoie au serveur. Réglez l'intervalle selon votre connexion (100ms = 10fps recommandé). Laissez l'app ouverte ou en arrière-plan. Appuyez sur ■ Arrêter pour terminer la diffusion."
             android:textColor="#556677"
             android:textSize="12sp"
             android:lineSpacingMultiplier="1.4"

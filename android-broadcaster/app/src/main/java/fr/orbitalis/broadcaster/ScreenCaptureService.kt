@@ -26,7 +26,7 @@ class ScreenCaptureService : Service() {
     companion object {
         const val CHANNEL_ID    = "OrbitalisBroadcastChannel"
         const val NOTIF_ID      = 1
-        const val INTERVAL_MS   = 1000L   // 1 fps — ajustable
+        const val DEFAULT_INTERVAL_MS = 100L   // 10 fps par défaut
         const val JPEG_QUALITY  = 70       // 0-100
     }
 
@@ -36,7 +36,9 @@ class ScreenCaptureService : Service() {
     private var captureThread:   HandlerThread?    = null
     private var handler:         Handler?          = null
     private var serverUrl: String = ""
+    private var stopUrl:   String = ""
     private var token:     String = ""
+    private var intervalMs: Long = DEFAULT_INTERVAL_MS
     private var running = false
 
     // ── Lifecycle ───────────────────────────────────────────────────────────
@@ -66,6 +68,14 @@ class ScreenCaptureService : Service() {
 
         serverUrl = intent.getStringExtra("url")   ?: run { stopSelf(); return START_NOT_STICKY }
         token     = intent.getStringExtra("token") ?: run { stopSelf(); return START_NOT_STICKY }
+        intervalMs = intent.getLongExtra("intervalMs", DEFAULT_INTERVAL_MS).coerceIn(100L, 5000L)
+
+        // Dériver l'URL de stop à partir de l'URL d'upload
+        stopUrl = try {
+            val u = java.net.URL(serverUrl)
+            val port = if (u.port != -1) ":${u.port}" else ""
+            "${u.protocol}://${u.host}$port/seestar-stop"
+        } catch (_: Exception) { "" }
 
         val mpManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = mpManager.getMediaProjection(resultCode, projData)
@@ -111,6 +121,11 @@ class ScreenCaptureService : Service() {
         virtualDisplay?.release()
         mediaProjection?.stop()
         imageReader?.close()
+        // Signal au serveur que la diffusion est terminée
+        if (token.isNotEmpty() && stopUrl.isNotEmpty()) {
+            val t = token; val u = stopUrl
+            Thread { try { postStop(u, t) } catch (_: Exception) {} }.start()
+        }
         super.onDestroy()
     }
 
@@ -120,7 +135,7 @@ class ScreenCaptureService : Service() {
         override fun run() {
             if (!running) return
             try { captureAndPost() } catch (_: Exception) {}
-            if (running) handler?.postDelayed(this, INTERVAL_MS)
+            if (running) handler?.postDelayed(this, intervalMs)
         }
     }
 
@@ -185,6 +200,22 @@ class ScreenCaptureService : Service() {
                 os.write(suffix)
             }
             conn.responseCode   // trigger the request
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    // ── Stop signal ─────────────────────────────────────────────────────────
+
+    private fun postStop(url: String, tok: String) {
+        val encodedToken = URLEncoder.encode(tok, "UTF-8")
+        val conn = java.net.URL("$url?token=$encodedToken").openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod  = "POST"
+            conn.connectTimeout = 4_000
+            conn.readTimeout    = 4_000
+            conn.setFixedLengthStreamingMode(0)
+            conn.responseCode
         } finally {
             conn.disconnect()
         }
