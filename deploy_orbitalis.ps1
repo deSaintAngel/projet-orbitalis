@@ -9,7 +9,7 @@
 # ============================================================================
 
 # Configuration
-$Server = "147.93.94.130"
+$Server = "***.**.**.***"
 $User = "root"
 $LocalProjectPath = "c:\Users\julien_orbitalis\Documents\projet_orbitalis"
 $RemoteBackendPath = "/var/www/orbitalis"
