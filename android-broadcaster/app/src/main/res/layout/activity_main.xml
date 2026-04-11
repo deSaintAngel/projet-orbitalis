@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#070710">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="28dp"
+        android:gravity="center_horizontal">
+
+        <!-- Logo / titre -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⟡ ORBITALIS"
+            android:textSize="28sp"
+            android:textColor="#44ee88"
+            android:textStyle="bold"
+            android:letterSpacing="0.12"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Diffusion d'écran Seestar"
+            android:textSize="14sp"
+            android:textColor="#7788aa"
+            android:layout_marginBottom="40dp"/>
+
+        <!-- URL -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="URL du serveur"
+            android:textColor="#99aabb"
+            android:textSize="12sp"
+            android:layout_marginBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/url_field"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#12122a"
+            android:textColor="#eeeeff"
+            android:textColorHint="#445566"
+            android:hint="https://stream.orbitalis.fr/seestar-upload"
+            android:padding="14dp"
+            android:inputType="textUri"
+            android:textSize="13sp"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- Token -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Token (ne pas modifier)"
+            android:textColor="#99aabb"
+            android:textSize="12sp"
+            android:layout_marginBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/token_field"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#12122a"
+            android:textColor="#eeeeff"
+            android:textColorHint="#445566"
+            android:hint="token"
+            android:padding="14dp"
+            android:inputType="textPassword"
+            android:textSize="13sp"
+            android:layout_marginBottom="36dp"/>
+
+        <!-- Bouton Démarrer -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/start_btn"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="▶  Démarrer la diffusion"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="#22cc66"
+            android:textColor="#000000"
+            android:layout_marginBottom="12dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto"/>
+
+        <!-- Bouton Arrêter -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/stop_btn"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="■  Arrêter"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="#cc3333"
+            android:textColor="#ffffff"
+            android:layout_marginBottom="28dp"
+            xmlns:app="http://schemas.android.com/apk/res-auto"/>
+
+        <!-- Statut -->
+        <TextView
+            android:id="@+id/status_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Prêt"
+            android:textColor="#888888"
+            android:textSize="14sp"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Info -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="L'application capture l'écran et l'envoie en continu au serveur (1 image/seconde). Laissez-la ouverte ou en arrière-plan. Les spectateurs voient la diffusion sur stream.orbitalis.fr."
+            android:textColor="#556677"
+            android:textSize="12sp"
+            android:lineSpacingMultiplier="1.4"
+            android:layout_marginTop="16dp"
+            android:gravity="center"/>
+
+    </LinearLayout>
+</ScrollView>
